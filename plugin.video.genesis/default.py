@@ -206,6 +206,10 @@ elif action == 'tvSearch':
     from resources.lib.indexers import tvshows
     tvshows.tvshows().search(query)
 
+elif action == 'tvSearchHistory':
+    from resources.lib.indexers import tvshows
+    tvshows.tvshows().search_from_history()
+
 elif action == 'tvPerson':
     from resources.lib.indexers import tvshows
     tvshows.tvshows().person(query)

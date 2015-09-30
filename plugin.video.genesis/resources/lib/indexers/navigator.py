@@ -104,6 +104,7 @@ class navigator:
         self.addDirectoryItem(30064, 'tvFavourites', 'tvFavourites.jpg', 'DefaultTVShows.png')
         self.addDirectoryItem(30065, 'tvPerson', 'tvPerson.jpg', 'DefaultTVShows.png')
         self.addDirectoryItem(30066, 'tvSearch', 'tvSearch.jpg', 'DefaultTVShows.png')
+        self.addDirectoryItem(30036, 'tvSearchHistory', 'movieSearch.jpg', 'DefaultMovies.png')
 
         self.endDirectory()
 

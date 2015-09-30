@@ -35,7 +35,7 @@ from resources.lib.libraries import views
 
 
 class movies:
-    history_file = os.path.join(xbmc.translatePath('special://temp/').decode('utf-8'), u'genesis-search.session')
+    history_file = os.path.join(xbmc.translatePath('special://temp/').decode('utf-8'), u'genesis-moviesearch.session')
 
     def __init__(self):
         self.list = []
@@ -183,7 +183,7 @@ class movies:
             else:
                 self.query = query
 
-            if self.query is None or self.query == '': return
+            if not self.query: return
 
             self.save_history(self.query)
 
@@ -1200,7 +1200,6 @@ class movies:
             history = self.read_history()
             self.list = [dict(title=item) for item in history]
             self.addSimpleDirectory(self.list)
-            # return self.search(query)
             return self.list
         except:
             pass

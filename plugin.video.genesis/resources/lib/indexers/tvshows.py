@@ -19,7 +19,7 @@
 '''
 
 
-import os,sys,re,json,urllib,urlparse,base64,datetime
+import os,sys,re,json,urllib,urlparse,base64,datetime,xbmc
 
 try: action = dict(urlparse.parse_qsl(sys.argv[2].replace('?','')))['action']
 except: action = None
@@ -35,6 +35,8 @@ from resources.lib.libraries import views
 
 
 class tvshows:
+    history_file = os.path.join(xbmc.translatePath('special://temp/').decode('utf-8'), u'genesis-tvsearch.session')
+
     def __init__(self):
         self.list = []
 
@@ -163,10 +165,12 @@ class tvshows:
             else:
                 self.query = query
 
-            if (self.query == None or self.query == ''): return
+            if not self.query: return
 
             url = self.search_link % urllib.quote_plus(self.query)
             self.list = cache.get(self.trakt_list, 0, url)
+
+            self.save_history(self.query)
 
             self.worker()
             self.tvshowDirectory(self.list)
@@ -1055,6 +1059,48 @@ class tvshows:
         control.content(int(sys.argv[1]), 'tvshows')
         control.directory(int(sys.argv[1]), cacheToDisc=True)
         views.setView('tvshows', {'skin.confluence': 500})
+
+
+    def search_from_history(self):
+        try:
+            history = self.read_history()
+            self.list = [dict(title=item) for item in history]
+            self.addSimpleDirectory(self.list)
+            return self.list
+        except:
+            pass
+
+
+    def read_history(self):
+        contents = []
+        if os.path.isfile(self.history_file):
+            with open(self.history_file, 'r') as f:
+                contents = list(filter(None, map(str.strip, f.readlines())))
+        return contents
+
+
+    def save_history(self, query):
+        contents = self.read_history()
+        while query in contents:
+            contents.remove(query)
+        contents.insert(0, query)
+        with open(self.history_file, 'w') as f:
+            f.write('\n'.join(contents))
+
+
+    def addSimpleDirectory(self, items):
+        if not items: return
+
+        sysaddon = sys.argv[0]
+        handle = int(sys.argv[1])
+        thumb = control.addonThumb()
+        for i in items:
+            query = i['title']
+            url = '%s?action=tvSearch&query=%s' % (sysaddon, urllib.quote_plus(query))
+            item = control.item(label=query, iconImage=thumb, thumbnailImage=thumb)
+            control.addItem(handle=handle, url=url, listitem=item, isFolder=True)
+
+        control.directory(handle, cacheToDisc=True)
 
 
     def addDirectory(self, items):
