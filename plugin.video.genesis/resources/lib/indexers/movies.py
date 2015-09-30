@@ -19,7 +19,7 @@
 '''
 
 
-import os,sys,re,json,urllib,urlparse,base64,datetime
+import os,sys,re,json,urllib,urlparse,base64,datetime,xbmc
 
 try: action = dict(urlparse.parse_qsl(sys.argv[2].replace('?','')))['action']
 except: action = None
@@ -35,6 +35,8 @@ from resources.lib.libraries import views
 
 
 class movies:
+    history_file = os.path.join(xbmc.translatePath('special://temp/').decode('utf-8'), u'genesis-search.session')
+
     def __init__(self):
         self.list = []
 
@@ -174,14 +176,16 @@ class movies:
 
     def search(self, query=None):
         try:
-            if query == None:
+            if query is None:
                 t = control.lang(30201).encode('utf-8')
                 k = control.keyboard('', t) ; k.doModal()
                 self.query = k.getText() if k.isConfirmed() else None
             else:
                 self.query = query
 
-            if (self.query == None or self.query == ''): return
+            if self.query is None or self.query == '': return
+
+            self.save_history(self.query)
 
             url = self.search_link % ('%s', urllib.quote_plus(self.query))
             self.list = cache.get(self.tmdb_list, 0, url)
@@ -195,7 +199,7 @@ class movies:
 
     def person(self, query=None):
         try:
-            if query == None:
+            if query is None:
                 t = control.lang(30201).encode('utf-8')
                 k = control.keyboard('', t) ; k.doModal()
                 self.query = k.getText() if k.isConfirmed() else None
@@ -1051,14 +1055,15 @@ class movies:
     def movieDirectory(self, items):
         if items == None or len(items) == 0: return
 
-        isFolder = True if control.setting('autoplay') == 'false' and control.setting('host_select') == '1' else False
-        isFolder = False if control.window.getProperty('PseudoTVRunning') == 'True' else isFolder
+        isFolder = control.setting('autoplay') == 'false' and control.setting('host_select') == '1'
+        isFolder = control.window.getProperty('PseudoTVRunning') != 'True' or isFolder
 
         playbackMenu = control.lang(30204).encode('utf-8') if control.setting('autoplay') == 'true' else control.lang(30203).encode('utf-8')
 
-        traktMode = False if trakt.getTraktCredentials() == False else True
+        traktMode = trakt.getTraktCredentials() == False
 
-        cacheToDisc = False if not action == 'movieSearch' else True
+        # cacheToDisc = False if not action == 'movieSearch' else True
+        cacheToDisc = action != 'movieSearch'
 
         addonPoster, addonBanner = control.addonPoster(), control.addonBanner()
         addonFanart, settingFanart = control.addonFanart(), control.setting('fanart')
@@ -1134,7 +1139,7 @@ class movies:
 
                 cm.append((control.lang(30205).encode('utf-8'), 'Action(Info)'))
 
-                if not action == 'movieSearch':
+                if action != 'movieSearch':
                     cm.append((control.lang(30206).encode('utf-8'), 'RunPlugin(%s?action=moviePlaycount&title=%s&year=%s&imdb=%s&query=7)' % (sysaddon, systitle, year, imdb)))
                     cm.append((control.lang(30207).encode('utf-8'), 'RunPlugin(%s?action=moviePlaycount&title=%s&year=%s&imdb=%s&query=6)' % (sysaddon, systitle, year, imdb)))
 
@@ -1190,8 +1195,51 @@ class movies:
         views.setView('movies', {'skin.confluence': 500})
 
 
+    def search_from_history(self):
+        try:
+            history = self.read_history()
+            self.list = [dict(title=item) for item in history]
+            self.addSimpleDirectory(self.list)
+            # return self.search(query)
+            return self.list
+        except:
+            pass
+
+
+    def read_history(self):
+        contents = []
+        if os.path.isfile(self.history_file):
+            with open(self.history_file, 'r') as f:
+                contents = list(filter(None, map(str.strip, f.readlines())))
+        return contents
+
+
+    def save_history(self, query):
+        contents = self.read_history()
+        while query in contents:
+            contents.remove(query)
+        contents.insert(0, query)
+        with open(self.history_file, 'w') as f:
+            f.write('\n'.join(contents))
+
+
+    def addSimpleDirectory(self, items):
+        if not items: return
+
+        sysaddon = sys.argv[0]
+        handle = int(sys.argv[1])
+        thumb = control.addonThumb()
+        for i in items:
+            query = i['title']
+            url = '%s?action=movieSearch&query=%s' % (sysaddon, urllib.quote_plus(query))
+            item = control.item(label=query, iconImage=thumb, thumbnailImage=thumb)
+            control.addItem(handle=handle, url=url, listitem=item, isFolder=True)
+
+        control.directory(handle, cacheToDisc=True)
+
+
     def addDirectory(self, items):
-        if items == None or len(items) == 0: return
+        if not items: return
 
         sysaddon = sys.argv[0]
         addonFanart = control.addonFanart()
@@ -1204,7 +1252,7 @@ class movies:
                 except: name = i['name']
 
                 if i['image'].startswith('http://'): thumb = i['image']
-                elif not artPath == None: thumb = os.path.join(artPath, i['image'])
+                elif artPath is not None: thumb = os.path.join(artPath, i['image'])
                 else: thumb = addonThumb
 
                 url = '%s?action=%s' % (sysaddon, i['action'])
@@ -1218,7 +1266,7 @@ class movies:
 
                 item = control.item(label=name, iconImage=thumb, thumbnailImage=thumb)
                 item.addContextMenuItems(cm, replaceItems=False)
-                if not addonFanart == None: item.setProperty('Fanart_Image', addonFanart)
+                if addonFanart is not None: item.setProperty('Fanart_Image', addonFanart)
                 control.addItem(handle=int(sys.argv[1]), url=url, listitem=item, isFolder=True)
             except:
                 pass

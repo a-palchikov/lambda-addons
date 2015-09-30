@@ -82,6 +82,7 @@ class navigator:
         self.addDirectoryItem(30033, 'movieFavourites', 'movieFavourites.jpg', 'DefaultMovies.png')
         self.addDirectoryItem(30034, 'moviePerson', 'moviePerson.jpg', 'DefaultMovies.png')
         self.addDirectoryItem(30035, 'movieSearch', 'movieSearch.jpg', 'DefaultMovies.png')
+        self.addDirectoryItem(30036, 'movieSearchHistory', 'movieSearch.jpg', 'DefaultMovies.png')
 
         self.endDirectory()
 
@@ -200,13 +201,13 @@ class navigator:
     def addDirectoryItem(self, name, query, thumb, icon, context=None, isAction=True, isFolder=True):
         try: name = control.lang(name).encode('utf-8')
         except: pass
-        url = '%s?action=%s' % (sysaddon, query) if isAction == True else query
-        thumb = os.path.join(artPath, thumb) if not artPath == None else icon
+        url = '%s?action=%s' % (sysaddon, query) if isAction else query
+        thumb = os.path.join(artPath, thumb) if artPath is not None else icon
         cm = []
-        if not context == None: cm.append((control.lang(context[0]).encode('utf-8'), 'RunPlugin(%s?action=%s)' % (sysaddon, context[1])))
+        if context is not None: cm.append((control.lang(context[0]).encode('utf-8'), 'RunPlugin(%s?action=%s)' % (sysaddon, context[1])))
         item = control.item(label=name, iconImage=thumb, thumbnailImage=thumb)
         item.addContextMenuItems(cm, replaceItems=False)
-        if not addonFanart == None: item.setProperty('Fanart_Image', addonFanart)
+        if addonFanart is not None: item.setProperty('Fanart_Image', addonFanart)
         control.addItem(handle=int(sys.argv[1]), url=url, listitem=item, isFolder=isFolder)
 
 

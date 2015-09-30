@@ -162,6 +162,10 @@ elif action == 'movieSearch':
     from resources.lib.indexers import movies
     movies.movies().search(query)
 
+elif action == 'movieSearchHistory':
+    from resources.lib.indexers import movies
+    movies.movies().search_from_history()
+
 elif action == 'moviePerson':
     from resources.lib.indexers import movies
     movies.movies().person(query)

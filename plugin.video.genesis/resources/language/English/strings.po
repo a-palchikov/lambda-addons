@@ -112,6 +112,10 @@ msgctxt "#30035"
 msgid "Search"
 msgstr "Search"
 
+msgctxt "#30036"
+msgid "Search History"
+msgstr "Search History"
+
 msgctxt "#30051"
 msgid "Genres"
 msgstr "Genres"
